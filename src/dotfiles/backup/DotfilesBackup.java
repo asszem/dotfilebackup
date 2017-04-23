@@ -49,12 +49,12 @@ public class DotfilesBackup {
 				return null;
 			}
 			//Create new array based on the settingsRead array. Each file has 4 rows in the settings file
-			String[][] filesToBackup =new String[settingsRead.size()/4][2];	
-			int currentFileCounter=0;
-			for (int i=0;i<filesToBackup.length;i++){
-			filesToBackup[i][SOURCE_FILE_INDEX]=settingsRead.get(++currentFileCounter);
-			filesToBackup[i][TARGET_FILE_INDEX]=settingsRead.get(++currentFileCounter);
-			currentFileCounter+=2;
+			String[][] filesToBackup = new String[settingsRead.size() / 4][2];
+			int currentFileCounter = 0;
+			for (int i = 0; i < filesToBackup.length; i++) {
+				filesToBackup[i][SOURCE_FILE_INDEX] = settingsRead.get(++currentFileCounter);
+				filesToBackup[i][TARGET_FILE_INDEX] = settingsRead.get(++currentFileCounter);
+				currentFileCounter += 2;
 			}
 			return filesToBackup;
 		} catch (IOException ex) {
@@ -63,11 +63,7 @@ public class DotfilesBackup {
 		return null;
 	}
 
-	public static void addToSettingsFile(boolean testRun) {
-
-	}
-
-	public static String[][] getFilesToBackup(boolean testRun) {
+	public static String[][] getFilesToBackupHardcoded(boolean testRun) {
 //[source]=J:\dotfiles\test\sourcefile.txt[target]=J:\dotfiles\test\target file.txt
 		if (testRun) { //Hardcoded test files only on drive J
 			String[][] filesToBackup = new String[2][2];
@@ -90,7 +86,8 @@ public class DotfilesBackup {
 	}
 
 	public static void runBackup(boolean testRun) {
-		String[][] filesToBackup = getFilesToBackup(testRun);
+//		String[][] filesToBackup = getFilesToBackupHardcoded(testRun);
+		String[][] filesToBackup = readSettingsFile(testRun);
 		for (String[] currentFile : filesToBackup) {
 			Path currentSourcePath = Paths.get(currentFile[SOURCE_FILE_INDEX]);
 			Path currentTargetPath = Paths.get(currentFile[TARGET_FILE_INDEX]);
@@ -177,29 +174,17 @@ public class DotfilesBackup {
 		return dateFormat.format(date);
 	}
 
-	public static void addDotfile() {
-
-	}
-
 	public static void main(String[] args) {
+		System.out.println("Dot Files Backup - Version 1.0");
 		boolean keepRunning = true;
 		while (keepRunning) {
 			Scanner in = new Scanner(System.in);
-			System.out.println("Version 1.0");
-			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[lt] - list test files\n[lp] - list production files\n[a] - add files\n[st] - list test settings\n[sp] - list production settings\n[q] - quit");
+			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[st] - list test settings\n[sp] - list production settings\n[q] - quit");
 			System.out.print("Enter your command: ");
 			boolean testRun = false;
 			switch (in.next().toLowerCase()) {
 				case "q":
 					keepRunning = false;
-					break;
-				case "lt": //list test run files
-					testRun = true; //there is no break, continue with LP to print
-				case "lp":
-					String[][] filesToBackup = getFilesToBackup(testRun);
-					for (String[] currentFile : filesToBackup) {
-						System.out.printf("Source file=%n%s%nTarget file=%n%s%n", currentFile[SOURCE_FILE_INDEX], currentFile[TARGET_FILE_INDEX]);
-					}
 					break;
 				case "rt":
 					testRun = true;
@@ -210,14 +195,17 @@ public class DotfilesBackup {
 				case "st": //read the settings from TestRun
 					testRun = true;
 				case "sp": //read the settings from ProductionRun
-					System.out.println("Settings file content. Test run:" + testRun);
+					System.out.println("Dotfiles to backup:");
 					String[][] settingsRead = readSettingsFile(testRun);
 					if (settingsRead == null) {
 						System.out.println("Error with settings file");
 					} else {
 						for (String[] currentFile : settingsRead) {
-							System.out.printf("Source file=%n%s%nTarget file=%n%s%n", currentFile[SOURCE_FILE_INDEX], currentFile[TARGET_FILE_INDEX]);
+							System.out.printf("%s >>>>>%n", currentFile[SOURCE_FILE_INDEX].substring(currentFile[SOURCE_FILE_INDEX].lastIndexOf("\\")+1));
+							System.out.printf(" Source file=%s%n Target file=%s%n", currentFile[SOURCE_FILE_INDEX], currentFile[TARGET_FILE_INDEX]);
+
 						}
+						System.out.println("");
 					}
 					break;
 			}
