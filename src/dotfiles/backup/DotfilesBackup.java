@@ -179,7 +179,7 @@ public class DotfilesBackup {
 		boolean keepRunning = true;
 		while (keepRunning) {
 			Scanner in = new Scanner(System.in);
-			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[st] - list test settings\n[sp] - list production settings\n[q] - quit");
+			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[lts] - list test settings\n[lps] - list production settings\n[q] - quit");
 			System.out.print("Enter your command: ");
 			boolean testRun = false;
 			switch (in.next().toLowerCase()) {
@@ -192,9 +192,9 @@ public class DotfilesBackup {
 				case "r":
 					runBackup(testRun);
 					break;
-				case "st": //read the settings from TestRun
+				case "lts": //read the settings from TestRun
 					testRun = true;
-				case "sp": //read the settings from ProductionRun
+				case "lps": //read the settings from ProductionRun
 					System.out.println("Dotfiles to backup:");
 					String[][] settingsRead = readSettingsFile(testRun);
 					if (settingsRead == null) {
