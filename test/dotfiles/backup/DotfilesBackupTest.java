@@ -24,6 +24,7 @@ public class DotfilesBackupTest {
 	
 	public static String[][] testFiles =new String[1][2];
 	public static String charset ="UTF-8";
+	public final boolean TESTRUN=true;
 	
 	public DotfilesBackupTest() {
 	}
@@ -91,9 +92,9 @@ public class DotfilesBackupTest {
 	@Test
 	public void testRunBackup() {
 		System.out.println("runBackup");
-		String[][] filesToBackup = DotfilesBackup.getFilesToBackup();
+		String[][] filesToBackup = DotfilesBackup.getFilesToBackup(TESTRUN);
 		for (int i = 0; i < filesToBackup.length; i++) {
-			DotfilesBackup.runBackup();
+			DotfilesBackup.runBackup(TESTRUN);
 			System.out.printf("[%s] test...", filesToBackup[i][1]);
 			assertTrue(Files.exists(Paths.get(filesToBackup[i][1])));
 			System.out.println("OK");
@@ -103,7 +104,7 @@ public class DotfilesBackupTest {
 	@Test
 	public void testAppendMessage(){
 		System.out.println("appendMessage");
-		DotfilesBackup.runBackup();
+		DotfilesBackup.runBackup(TESTRUN);
 		Path targetFileToAppend=Paths.get(testFiles[0][1]);
 		String expMessageToFirstLine="Árvíztűrú tükörfúrógép " + ((int)(Math.random()*100));
 		DotfilesBackup.appendMessageToFirstLine(targetFileToAppend, expMessageToFirstLine);
