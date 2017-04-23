@@ -47,44 +47,7 @@ public class DotfilesBackupTest {
 	public void tearDown() {
 	}
 
-	/**
-	 * Test of listTargets method, of class DotfilesBackup.
-	 */
-	@Ignore
-	@Test
-	public void testListTargets() {
-		System.out.println("listTargets");
-		DotfilesBackup.listTargets();
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
-	}
 
-	/**
-	 * Test of listSources method, of class DotfilesBackup.
-	 */
-	@Ignore
-	@Test
-	public void testListSources() {
-		System.out.println("listSources");
-		DotfilesBackup.listSources();
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
-	}
-
-	/**
-	 * Test of getFilesToBackup method, of class DotfilesBackup.
-	 */
-	@Ignore
-	@Test
-	public void testGetFilesToBackup() {
-		System.out.println("getFilesToBackup");
-		String[][] expResult = null;
-//		String[][] result = DotfilesBackup.getFilesToBackup();
-		String[][] result = testFiles; 
-		assertArrayEquals(expResult, result);
-		// TODO review the generated test code and remove the default call to fail.
-		fail("The test case is a prototype.");
-	}
 
 	/**
 	 * Test of runBackup method, of class DotfilesBackup.

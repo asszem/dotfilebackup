@@ -11,20 +11,59 @@ import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DotfilesBackup {
 
 	public static final int SOURCE_FILE_INDEX = 0;
 	public static final int TARGET_FILE_INDEX = 1;
 	public static String charset = "UTF-8";
+	public static Path settingsFile = Paths.get(System.getProperty("user.home")).resolve("dotfilebackupSettings.txt");
+	public static Path testSettingsFile = Paths.get("J:/dotfiles/dotfilebackupSettings-test.txt");
 
-	public static void listTargets() {
-
+	public static String[][] readSettingsFile(boolean testRun) {
+		//Settings file structure
+		//**Start of <filename>
+		//source path
+		//target path
+		//**End of <filename>
+		//Validate if Settings file has even lines
+		if (Files.notExists(testRun ? testSettingsFile : settingsFile)) {
+			System.out.println("Settings file not found.");
+			return null;
+		}
+		ArrayList<String> settingsRead = new ArrayList<>();
+		try {
+			BufferedReader bufread = new BufferedReader(Files.newBufferedReader(testRun ? testSettingsFile : settingsFile, Charset.forName(charset)));
+			String currentLine;
+			//Read all content to the arraylist of settngsRead
+			while ((currentLine = bufread.readLine()) != null) {
+				settingsRead.add(currentLine);
+			}
+			if (settingsRead.size() % 4 != 0) {
+				System.out.println("Settings file corrupted!");
+				return null;
+			}
+			//Create new array based on the settingsRead array. Each file has 4 rows in the settings file
+			String[][] filesToBackup =new String[settingsRead.size()/4][2];	
+			int currentFileCounter=0;
+			for (int i=0;i<filesToBackup.length;i++){
+			filesToBackup[i][SOURCE_FILE_INDEX]=settingsRead.get(++currentFileCounter);
+			filesToBackup[i][TARGET_FILE_INDEX]=settingsRead.get(++currentFileCounter);
+			currentFileCounter+=2;
+			}
+			return filesToBackup;
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return null;
 	}
 
-	public static void listSources() {
+	public static void addToSettingsFile(boolean testRun) {
 
 	}
 
@@ -35,15 +74,16 @@ public class DotfilesBackup {
 			filesToBackup[0][SOURCE_FILE_INDEX] = "J:/dotfiles/test/sourcefile.txt";
 			filesToBackup[0][TARGET_FILE_INDEX] = "J:/dotfiles/test/targetfile.txt";
 			filesToBackup[1][SOURCE_FILE_INDEX] = "J:/dotfiles/test/sourcefile.txt";
-			filesToBackup[1][TARGET_FILE_INDEX] = "J:/dotfiles/test/targetfile2.txt";
+			filesToBackup[1][TARGET_FILE_INDEX] = "J:/dotfiles/test/targetfileSecond.txt";
 			return filesToBackup;
 		} else { //hardcoded production files on Desktop
 			String[][] filesToBackup = new String[3][2];
-			filesToBackup[0][SOURCE_FILE_INDEX] = "C:/Users/olaha/_vimrc";
+			String homeDir = Paths.get(System.getProperty("user.home")).toString();
+			filesToBackup[0][SOURCE_FILE_INDEX] = homeDir + "\\_vimrc";
 			filesToBackup[0][TARGET_FILE_INDEX] = "J:/dotfiles/test/vimrc";
-			filesToBackup[1][SOURCE_FILE_INDEX] = "C:/Users/olaha/.gitconfig";
+			filesToBackup[1][SOURCE_FILE_INDEX] = homeDir + "\\.gitconfig";
 			filesToBackup[1][TARGET_FILE_INDEX] = "J:/dotfiles/test/.gitconfig";
-			filesToBackup[2][SOURCE_FILE_INDEX] = "C:/Users/olaha/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1";
+			filesToBackup[2][SOURCE_FILE_INDEX] = homeDir + "\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1";
 			filesToBackup[2][TARGET_FILE_INDEX] = "J:/dotfiles/test/Microsoft.PowerShell_profile.ps1";
 			return filesToBackup;
 		}
@@ -72,7 +112,7 @@ public class DotfilesBackup {
 				//Append message to first line in target file
 				appendMessageToFirstLine(currentTargetPath, "This is a line appended, just to be overwritten");
 				overwriteMessageToFirstLine(currentTargetPath, "Last updated: " + getDate());
-				System.out.printf("file=%s%n\tsource=%s%n\ttarget=%s%n\t...OK%n",currentTargetPath.getFileName(),currentSourcePath, currentTargetPath);
+				System.out.printf("file=%s%n\tsource=%s%n\ttarget=%s%n\t...OK%n", currentTargetPath.getFileName(), currentSourcePath, currentTargetPath);
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
@@ -146,15 +186,15 @@ public class DotfilesBackup {
 		while (keepRunning) {
 			Scanner in = new Scanner(System.in);
 			System.out.println("Version 1.0");
-			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[lt] - list test files\n[lp] - list production files\n[a] - add files\n[q] - quit");
+			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[lt] - list test files\n[lp] - list production files\n[a] - add files\n[st] - list test settings\n[sp] - list production settings\n[q] - quit");
 			System.out.print("Enter your command: ");
-			boolean testRun=false;
+			boolean testRun = false;
 			switch (in.next().toLowerCase()) {
 				case "q":
 					keepRunning = false;
 					break;
 				case "lt": //list test run files
-					testRun=true; //there is no break, continue with LP to print
+					testRun = true; //there is no break, continue with LP to print
 				case "lp":
 					String[][] filesToBackup = getFilesToBackup(testRun);
 					for (String[] currentFile : filesToBackup) {
@@ -162,10 +202,23 @@ public class DotfilesBackup {
 					}
 					break;
 				case "rt":
-					testRun=true;
+					testRun = true;
 				case "rp":
 				case "r":
 					runBackup(testRun);
+					break;
+				case "st": //read the settings from TestRun
+					testRun = true;
+				case "sp": //read the settings from ProductionRun
+					System.out.println("Settings file content. Test run:" + testRun);
+					String[][] settingsRead = readSettingsFile(testRun);
+					if (settingsRead == null) {
+						System.out.println("Error with settings file");
+					} else {
+						for (String[] currentFile : settingsRead) {
+							System.out.printf("Source file=%n%s%nTarget file=%n%s%n", currentFile[SOURCE_FILE_INDEX], currentFile[TARGET_FILE_INDEX]);
+						}
+					}
 					break;
 			}
 		}
