@@ -92,8 +92,8 @@ public class DotfilesBackupTest {
 	public void testRunBackup() {
 		System.out.println("runBackup");
 		String[][] filesToBackup = DotfilesBackup.getFilesToBackup();
-		DotfilesBackup.runBackup();
 		for (int i = 0; i < filesToBackup.length; i++) {
+			DotfilesBackup.runBackup();
 			System.out.printf("[%s] test...", filesToBackup[i][1]);
 			assertTrue(Files.exists(Paths.get(filesToBackup[i][1])));
 			System.out.println("OK");
@@ -106,7 +106,7 @@ public class DotfilesBackupTest {
 		DotfilesBackup.runBackup();
 		Path targetFileToAppend=Paths.get(testFiles[0][1]);
 		String expMessageToFirstLine="Árvíztűrú tükörfúrógép " + ((int)(Math.random()*100));
-		DotfilesBackup.appendMessage(targetFileToAppend, expMessageToFirstLine);
+		DotfilesBackup.appendMessageToFirstLine(targetFileToAppend, expMessageToFirstLine);
 		try {
 			//read the file and verify if it has the message
 			BufferedReader bufread =new BufferedReader(Files.newBufferedReader(targetFileToAppend, Charset.forName(charset)));

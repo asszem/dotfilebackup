@@ -9,6 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,7 +21,7 @@ public class DotfilesBackup {
 
 	public static final int SOURCE_FILE_INDEX = 0;
 	public static final int TARGET_FILE_INDEX = 1;
-	public static String charset="UTF-8";
+	public static String charset = "UTF-8";
 
 	public static void listTargets() {
 
@@ -56,25 +60,27 @@ public class DotfilesBackup {
 				//Copy source file to target file
 				Files.copy(currentSourcePath, currentTargetPath, REPLACE_EXISTING);
 				//Append message to first line in target file
-				appendMessage(currentTargetPath, "File updated");
+				appendMessageToFirstLine(currentTargetPath, "This is a line appended, just to be overwritten");
+				overwriteMessageToFirstLine(currentTargetPath, "Last updated: "+ getDate());
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
 		}
 	}
-	public static void appendMessage(Path targetFile, String message){
+
+	public static void appendMessageToFirstLine(Path targetFile, String message) {
 		try {
 			//read the content of the current file
-			BufferedReader bufreader =new BufferedReader(Files.newBufferedReader(targetFile, Charset.forName(charset)));
-			StringBuilder oldFileContent= new StringBuilder();
+			BufferedReader bufreader = new BufferedReader(Files.newBufferedReader(targetFile, Charset.forName(charset)));
+			StringBuilder oldFileContent = new StringBuilder();
 			String currentLine;
-			while ((currentLine=bufreader.readLine())!=null){
+			while ((currentLine = bufreader.readLine()) != null) {
 				oldFileContent.append(currentLine).append(System.lineSeparator());
 			}
 			bufreader.close();
-			String newFileContent=message+System.lineSeparator()+oldFileContent.toString();
+			String newFileContent = message + System.lineSeparator() + oldFileContent.toString();
 			//Open the target file to append the message
-			BufferedWriter bufwriter =new BufferedWriter(Files.newBufferedWriter(targetFile, WRITE));
+			BufferedWriter bufwriter = new BufferedWriter(Files.newBufferedWriter(targetFile, WRITE));
 			bufwriter.write(newFileContent);
 			bufwriter.flush();
 			bufwriter.close();
@@ -82,6 +88,41 @@ public class DotfilesBackup {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	public static void overwriteMessageToFirstLine(Path targetFile, String message) {
+		try {
+			//read the content of the current file
+			BufferedReader bufreader = new BufferedReader(Files.newBufferedReader(targetFile, Charset.forName(charset)));
+			StringBuilder newFileContent = new StringBuilder();
+			String currentLine;
+			boolean firstLine = true;
+			while ((currentLine = bufreader.readLine()) != null) {
+				//Do not add the first line to the file to the newFileCounter. So it will be overwritten
+				if (firstLine == true) {
+					newFileContent.append(message).append(System.lineSeparator());
+					firstLine = false;
+				} else {
+					newFileContent.append(currentLine).append(System.lineSeparator());
+				}
+			}
+			bufreader.close();
+			//Open the target file to append the message
+
+			BufferedWriter bufwriter = new BufferedWriter(Files.newBufferedWriter(targetFile, WRITE, TRUNCATE_EXISTING));
+			bufwriter.write(newFileContent.toString());
+			bufwriter.flush();
+			bufwriter.close();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static String getDate() {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date date = new Date();
+//		System.out.println(dateFormat.format(date)); //2016/11/16 12:08:43
+		return dateFormat.format(date);
 	}
 
 	public static void addDotfile() {
