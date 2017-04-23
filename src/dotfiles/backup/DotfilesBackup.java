@@ -1,17 +1,23 @@
 package dotfiles.backup;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DotfilesBackup {
 
 	public static final int SOURCE_FILE_INDEX = 0;
 	public static final int TARGET_FILE_INDEX = 1;
+	public static String charset="UTF-8";
 
 	public static void listTargets() {
 
@@ -47,12 +53,34 @@ public class DotfilesBackup {
 				if (Files.notExists(currentTargetPath)) {
 					Files.createFile(currentTargetPath);
 				}
-				//Append message to first line in target file
 				//Copy source file to target file
 				Files.copy(currentSourcePath, currentTargetPath, REPLACE_EXISTING);
+				//Append message to first line in target file
+				appendMessage(currentTargetPath, "File updated");
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
+		}
+	}
+	public static void appendMessage(Path targetFile, String message){
+		try {
+			//read the content of the current file
+			BufferedReader bufreader =new BufferedReader(Files.newBufferedReader(targetFile, Charset.forName(charset)));
+			StringBuilder oldFileContent= new StringBuilder();
+			String currentLine;
+			while ((currentLine=bufreader.readLine())!=null){
+				oldFileContent.append(currentLine).append(System.lineSeparator());
+			}
+			bufreader.close();
+			String newFileContent=message+System.lineSeparator()+oldFileContent.toString();
+			//Open the target file to append the message
+			BufferedWriter bufwriter =new BufferedWriter(Files.newBufferedWriter(targetFile, WRITE));
+			bufwriter.write(newFileContent);
+			bufwriter.flush();
+			bufwriter.close();
+			//append the message to the first position
+		} catch (IOException ex) {
+			ex.printStackTrace();
 		}
 	}
 
