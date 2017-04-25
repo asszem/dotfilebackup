@@ -37,8 +37,7 @@ public class DotfilesBackup {
 			return null;
 		}
 		ArrayList<String> settingsRead = new ArrayList<>();
-		try {
-			BufferedReader bufread = new BufferedReader(Files.newBufferedReader(testRun ? testSettingsFile : settingsFile, Charset.forName(charset)));
+		try (BufferedReader bufread = new BufferedReader(Files.newBufferedReader(testRun ? testSettingsFile : settingsFile, Charset.forName(charset)));){
 			String currentLine;
 			//Read all content to the arraylist of settngsRead
 			while ((currentLine = bufread.readLine()) != null) {
