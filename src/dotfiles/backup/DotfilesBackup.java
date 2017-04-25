@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ public class DotfilesBackup {
 			return null;
 		}
 		ArrayList<String> settingsRead = new ArrayList<>();
-		try (BufferedReader bufread = new BufferedReader(Files.newBufferedReader(testRun ? testSettingsFile : settingsFile, Charset.forName(charset)));){
+		try (BufferedReader bufread = new BufferedReader(Files.newBufferedReader(testRun ? testSettingsFile : settingsFile, Charset.forName(charset)));) {
 			String currentLine;
 			//Read all content to the arraylist of settngsRead
 			while ((currentLine = bufread.readLine()) != null) {
@@ -97,23 +99,43 @@ public class DotfilesBackup {
 				continue;
 			}
 			try {
-				//Create the parent() directory for the target file
-				Files.createDirectories(currentTargetPath.getParent());
-				//Create the file if doesn't exist
+				boolean isSourceNewer = false;
+				Files.createDirectories(currentTargetPath.getParent()); //Create parent directory for target
 				if (Files.notExists(currentTargetPath)) {
-					Files.createFile(currentTargetPath);
+					Files.createFile(currentTargetPath); //Create the target file
+					isSourceNewer = true; //when the backup file is first created, consider the source newer
+				} else //If target file already exists, check the last modification date		
+				// source Timestamp LATER than Target timestamp > 0
+				/*0 if this FileTime is equal to other, 
+					a value less than 0 if this FileTime represents a time that is before other,
+					and a value greater than 0 if this FileTime represents a time that is after other*/ {
+					if (getFileLastModifiedTime(currentSourcePath).compareTo(getFileLastModifiedTime(currentTargetPath)) > 0) {
+						isSourceNewer = true;
+					}
 				}
-				//Copy source file to target file
-				Files.copy(currentSourcePath, currentTargetPath, REPLACE_EXISTING);
-				//Append message to first line in target file
-				appendMessageToFirstLine(currentTargetPath, "This is a line appended, just to be overwritten");
-				overwriteMessageToFirstLine(currentTargetPath, "Last updated: " + getDate());
-				System.out.printf("file=%s%n\tsource=%s%n\ttarget=%s%n\t...OK%n", currentTargetPath.getFileName(), currentSourcePath, currentTargetPath);
+				if (isSourceNewer) {
+					//Copy source file to target file, but only if different
+					Files.copy(currentSourcePath, currentTargetPath, REPLACE_EXISTING);
+					//Append message to first line in target file
+					appendMessageToFirstLine(currentTargetPath, "This is a line appended, just to be overwritten");
+					overwriteMessageToFirstLine(currentTargetPath, "Last updated: " + getDate());
+				}
+				String sourceModifiedIndicator = isSourceNewer ? "*" : "";
+				String targetModifiedIndicator = isSourceNewer ? "" : "*";
+				/*
+				System.out.printf("[%s]%n\tsource=%s%n\ttarget=%s%n", currentTargetPath.getFileName(), currentSourcePath, currentTargetPath);
+				System.out.printf("\tsource modified=%s%s%n\ttarget modified=%s%s%n", convertFileModifiedTime(getFileLastModifiedTime(currentSourcePath)), sourceModifiedIndicator, convertFileModifiedTime(getFileLastModifiedTime(currentTargetPath)), targetModifiedIndicator);
+				 */
+
+				System.out.printf("[%s]%n\tSource file%n\t\t%s%n\t\tLast modified:%s%s%n", currentSourcePath.getFileName(), currentSourcePath, convertFileModifiedTime(getFileLastModifiedTime(currentSourcePath)), sourceModifiedIndicator);
+				System.out.printf("\tTarget file%n\t\t%s%n\t\tLast modified:%s%s%n", currentTargetPath, convertFileModifiedTime(getFileLastModifiedTime(currentTargetPath)), targetModifiedIndicator);
+				System.out.println(isSourceNewer ? "\tFile written" : "\tFile skipped (no modification)");
+				System.out.println("");
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
 		}
-		System.out.println("Backup completed.");
+		System.out.println("\nBackup completed. Don't forget to commit!");
 	}
 
 	public static void appendMessageToFirstLine(Path targetFile, String message) {
@@ -173,12 +195,24 @@ public class DotfilesBackup {
 		return dateFormat.format(date);
 	}
 
+	public static FileTime getFileLastModifiedTime(Path file) throws IOException {
+		BasicFileAttributes basicFileAttrs = Files.readAttributes(file, BasicFileAttributes.class);
+		return basicFileAttrs.lastModifiedTime();
+//		System.out.println(lastModified.toString());
+	}
+
+	public static String convertFileModifiedTime(FileTime fileTime) {
+		StringBuilder strB = new StringBuilder();
+		strB.append(fileTime.toString().substring(0, 10)).append(" ").append(fileTime.toString().substring(11, 19));
+		return strB.toString();
+	}
+
 	public static void main(String[] args) {
-		System.out.println("Dot Files Backup - Version 1.0");
+		System.out.println("Dot Files Backup - Version 2.0");
 		boolean keepRunning = true;
 		while (keepRunning) {
 			Scanner in = new Scanner(System.in);
-			System.out.println("[rp] - run production backup\n[rt] - run test backup\n[lts] - list test settings\n[lps] - list production settings\n[q] - quit");
+			System.out.println("[rp]\t- run production backup\n[rt]\t- run test backup\n[lps]\t- list production settings\n[lts]\t- list test settings\n[q]\t- quit");
 			System.out.print("Enter your command: ");
 			boolean testRun = false;
 			switch (in.next().toLowerCase()) {
@@ -190,6 +224,7 @@ public class DotfilesBackup {
 				case "rp":
 				case "r":
 					runBackup(testRun);
+					keepRunning=false;
 					break;
 				case "lts": //read the settings from TestRun
 					testRun = true;
@@ -200,7 +235,7 @@ public class DotfilesBackup {
 						System.out.println("Error with settings file");
 					} else {
 						for (String[] currentFile : settingsRead) {
-							System.out.printf("%s >>>>>%n", currentFile[SOURCE_FILE_INDEX].substring(currentFile[SOURCE_FILE_INDEX].lastIndexOf("\\")+1));
+							System.out.printf("%s >>>>>%n", currentFile[SOURCE_FILE_INDEX].substring(currentFile[SOURCE_FILE_INDEX].lastIndexOf("\\") + 1));
 							System.out.printf(" Source file=%s%n Target file=%s%n", currentFile[SOURCE_FILE_INDEX], currentFile[TARGET_FILE_INDEX]);
 
 						}
